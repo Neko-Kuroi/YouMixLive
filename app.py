@@ -372,7 +372,7 @@ async def livestream_websocket(websocket: WebSocket):
                 current_index += 1
                 continue
             
-            # 4. FFmpegコマンド構築（ノイズ対策版）
+            # 4. FFmpegコマンド構築（音切れ対策強化版）
             cmd = [
                 "ffmpeg",
                 
@@ -380,10 +380,12 @@ async def livestream_websocket(websocket: WebSocket):
                 "-re",  # リアルタイム読み込み
                 "-i", video_url,
                 
-                # === Audio入力（WebSocket）===
-                "-thread_queue_size", "2048",     # バッファ大幅増量（512→2048）
+                # === Audio入力（WebSocket）- プリバッファリング強化 ===
+                "-thread_queue_size", "4096",     # さらに増量
                 "-use_wallclock_as_timestamps", "1",
-                "-fflags", "+genpts",             # タイムスタンプ生成を強制
+                "-fflags", "+genpts+igndts",      # タイムスタンプ問題を無視
+                "-avoid_negative_ts", "make_zero",
+                "-max_delay", "5000000",          # 5秒の最大遅延許容
                 "-f", "webm",
                 "-i", "pipe:0",
                 
@@ -400,14 +402,18 @@ async def livestream_websocket(websocket: WebSocket):
                 "-pix_fmt", "yuv420p",
                 "-g", "60",
                 
-                # === Audio エンコード（音切れ対策強化） ===
+                # === Audio エンコード（音切れ完全対策） ===
                 "-c:a", "aac",
                 "-b:a", "128k",
                 "-ar", "48000",
                 "-ac", "2",
                 "-async", "1",
-                "-vsync", "cfr",                  # 一定フレームレート強制
-                "-af", "aresample=async=1:min_hard_comp=0.100000:first_pts=0,apad",  # パディング追加
+                "-vsync", "cfr",
+                # 音切れ対策フィルター
+                "-af", "aresample=async=1:min_hard_comp=0.100000:first_pts=0,apad=whole_dur=0.1,afftdn=nf=-25",
+                
+                # === 出力バッファリング ===
+                "-flush_packets", "0",            # パケットをバッファリング
                 
                 # === 出力 ===
                 "-f", "flv",
@@ -425,9 +431,9 @@ async def livestream_websocket(websocket: WebSocket):
             
             livestream_process = process
             
-            # 5. Audioデータ転送タスク（バッファリング強化版）
+            # 5. Audioデータ転送タスク（バッファリング最適化版）
             audio_task_cancelled = False
-            buffer_threshold = 5  # 5チャンク溜まってから一気に送る
+            buffer_threshold = 3  # 3チャンク（150ms分）溜めてから送る
             
             async def forward_audio():
                 nonlocal audio_task_cancelled
@@ -441,10 +447,10 @@ async def livestream_websocket(websocket: WebSocket):
                         buffer.append(data)
                         
                         # バッファが溜まったら一気に書き込み
-                        if len(buffer) >= buffer_threshold or chunk_count % 100 == 0:
+                        if len(buffer) >= buffer_threshold:
                             if process.stdin and not process.stdin.is_closing():
-                                for buffered_data in buffer:
-                                    process.stdin.write(buffered_data)
+                                combined = b''.join(buffer)  # 結合して一度に書き込み
+                                process.stdin.write(combined)
                                 await process.stdin.drain()
                                 buffer.clear()
                                 
@@ -462,8 +468,8 @@ async def livestream_websocket(websocket: WebSocket):
                     # 残りのバッファを書き込み
                     if buffer and process.stdin and not process.stdin.is_closing():
                         try:
-                            for buffered_data in buffer:
-                                process.stdin.write(buffered_data)
+                            combined = b''.join(buffer)
+                            process.stdin.write(combined)
                             await process.stdin.drain()
                         except:
                             pass

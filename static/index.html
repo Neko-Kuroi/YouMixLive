@@ -1566,10 +1566,10 @@
                             }
                         };
                         
-                        livestreamRecorder.start(10); // 10msごとにAudioデータ送信（より細かく）
+                        livestreamRecorder.start(50); // 50msごとにAudioデータ送信（最適値）
                         livestreamActive = true;
                         
-                        console.log('[LiveStream] Audio streaming started (10ms chunks)');
+                        console.log('[LiveStream] Audio streaming started (50ms chunks)');
 
                         document.getElementById('btn-livestream-start').disabled = true;
                         document.getElementById('btn-livestream-stop').disabled = false;
