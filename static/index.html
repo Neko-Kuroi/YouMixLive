@@ -1,3 +1,4 @@
+#%%writefile static/index.html
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -229,6 +230,25 @@
             border-radius: 8px;
             padding: 10px;
         }
+        .playing-stripe {
+            background: linear-gradient(
+                45deg,
+                rgba(209, 236, 241, 1) 25%,
+                rgba(180, 225, 235, 1) 25%,
+                rgba(180, 225, 235, 1) 50%,
+                rgba(209, 236, 241, 1) 50%,
+                rgba(209, 236, 241, 1) 75%,
+                rgba(180, 225, 235, 1) 75%,
+                rgba(180, 225, 235, 1) 100%
+            ) ;
+            background-size: 40px 40px !important;
+            animation: move-stripe2 2s linear infinite !important;
+            border: 1px solid #bee5eb !important;
+        }
+        @keyframes move-stripe2 {
+            from { background-position: 0 0; }
+            to { background-position: 80px 0; }
+        }
     </style>
 </head>
 <body>
@@ -246,19 +266,21 @@
                 <input type="hidden" id="url1" value="">
                 <h3 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     Track 1 <span id="time1" style="font-family: monospace; font-size: 18px; color: #666;">00:00:00</span>
+                    <span id="seconds1" style="font-family: monospace; font-size: 14px; color: #718096; background: #edf2f7; padding: 2px 6px; border-radius: 4px;">[0s]</span>
                 </h3>
-                
+
                 <div style="background: #e9ecef; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
                     <span style="font-size: 12px; color: #6c757d; font-weight: 500;">Repeat: </span>
                     <span id="repeatStatus1" style="font-size: 12px; font-weight: bold; color: #495057;">No Repeat</span>
                 </div>
-                
+
                 <video id="v1" width="100%" height="auto" style="border-radius: 8px; background: #000; margin-bottom: 12px; display: block;" crossorigin="anonymous" playsinline muted></video>
 
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button type="button" id="playPause1" onclick="toggleTrackPlay(1)" style="background: #007bff; color: white; flex:1;">Play</button>
                     <button type="button" onclick="resetTrack(1)" style="background: #6c757d; color: white; flex:1;">Reset</button>
                     <button type="button" id="mute1" onclick="toggleMute(1)" style="background: #6c757d; color: white; flex:1;">Mute</button>
+                    <button type="button" onclick="hardResetTrack(1)" style="background: #dc3545; color: white; padding: 8px; font-size: 12px;" title="Hard Reset: Recreate video element">☠️</button>
                 </div>
 
                 <div style="margin-top:12px;">
@@ -282,7 +304,7 @@
                     <button type="button" onclick="addToList(1)" style="background: #28a745; color: white; flex: 0 0 70px; border-radius:8px;">Add</button>
                 </div>
                 <ul id="playlist1" style="list-style: none; padding: 0; max-height: 180px; overflow-y: auto; background: #eee; border-radius: 8px; min-height: 50px; margin-bottom: 10px;"></ul>
-                
+
                 <div style="padding-top: 10px; border-top: 1px solid #eee;">
                     <label style="font-weight: bold; margin-bottom: 8px; display: block;">Repeat Mode:</label>
                     <label style="display:block; margin-bottom:5px; cursor: pointer;">
@@ -308,6 +330,18 @@
                     <label style="display:flex; justify-content:space-between;">TREBLE <span id="eq-high-val1">0dB</span></label>
                     <input type="range" min="-15" max="15" value="0" style="width: 100%;" oninput="updateEQ(1, 'high', this.value)">
                 </div>
+                <div class="fx-controls" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                    <div>
+                        <small>Pitch: <span id="pitch-val1">0</span></small><br>
+                        <input type="range" min="-12" max="12" value="0" step="0.5" style="width:100%"
+                            oninput="updatePitch(1, this.value)">
+                    </div>
+                    <div style="margin-top: 5px;">
+                        <small>Speed: <span id="speed-val1">1.00x</span></small><br>
+                        <input type="range" min="0.5" max="2.0" value="1.0" step="0.01" style="width:100%"
+                            oninput="updateSpeed(1, this.value)">
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -322,25 +356,27 @@
                 <input type="hidden" id="url2" value="">
                 <h3 style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     Track 2 <span id="time2" style="font-family: monospace; font-size: 18px; color: #666;">00:00:00</span>
+                    <span id="seconds2" style="font-family: monospace; font-size: 14px; color: #718096; background: #edf2f7; padding: 2px 6px; border-radius: 4px;">[0s]</span>                </h3>
                 </h3>
-                
+
                 <div style="background: #e9ecef; padding: 8px 12px; border-radius: 6px; margin-bottom: 12px; text-align: center;">
                     <span style="font-size: 12px; color: #6c757d; font-weight: 500;">Repeat: </span>
                     <span id="repeatStatus2" style="font-size: 12px; font-weight: bold; color: #495057;">No Repeat</span>
                 </div>
-                
+
                 <video id="v2" width="100%" height="auto" style="border-radius: 8px; background: #000; margin-bottom: 12px; display: block;" crossorigin="anonymous" playsinline muted></video>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                     <button type="button" id="playPause2" onclick="toggleTrackPlay(2)" style="background: #007bff; color: white; flex:1;">Play</button>
                     <button type="button" onclick="resetTrack(2)" style="background: #6c757d; color: white; flex:1;">Reset</button>
                     <button type="button" id="mute2" onclick="toggleMute(2)" style="background: #6c757d; color: white; flex:1;">Mute</button>
+                    <button type="button" onclick="hardResetTrack(2)" style="background: #dc3545; color: white; padding: 8px; font-size: 12px;" title="Hard Reset: Recreate video element">☠️</button>
                 </div>
-                
+
                 <div style="margin-top:12px;">
                     <label>Start Time (Offset) - seconds</label>
                     <input type="number" id="start2" value="0" min="0" step="0.1" style="width:100%; margin-bottom: 12px;">
                 </div>
-                
+
                 <div style="margin-top:12px;">
                     <label>Volume</label>
                     <div class="volume-control">
@@ -357,7 +393,7 @@
                     <button type="button" onclick="addToList(2)" style="background: #28a745; color: white; flex: 0 0 70px; border-radius:8px;">Add</button>
                 </div>
                 <ul id="playlist2" style="list-style: none; padding: 0; max-height: 180px; overflow-y: auto; background: #eee; border-radius: 8px; min-height: 50px; margin-bottom: 10px;"></ul>
-                
+
                 <div style="padding-top: 10px; border-top: 1px solid #eee;">
                     <label style="font-weight: bold; margin-bottom: 8px; display: block;">Repeat Mode:</label>
                     <label style="display:block; margin-bottom:5px; cursor: pointer;">
@@ -381,9 +417,21 @@
                     <label style="display:flex; justify-content:space-between;">TREBLE <span id="eq-high-val2">0dB</span></label>
                     <input type="range" min="-15" max="15" value="0" style="width: 100%;" oninput="updateEQ(2, 'high', this.value)">
                 </div>
+                <div class="fx-controls" style="margin-top: 10px; border-top: 1px dashed #ccc; padding-top: 10px;">
+                    <div>
+                        <small>Pitch: <span id="pitch-val2">0</span></small><br>
+                        <input type="range" min="-12" max="12" value="0" step="1" style="width:100%"
+                            oninput="updatePitch(2, this.value)">
+                    </div>
+                    <div style="margin-top: 5px;">
+                        <small>Speed: <span id="speed-val2">1.00x</span></small><br>
+                        <input type="range" min="0.5" max="2.0" value="1.0" step="0.01" style="width:100%"
+                            oninput="updateSpeed(2, this.value)">
+                    </div>
+                </div>
             </div>
         </div>
-        
+
         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
             <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
                 <div class="controls">
@@ -414,13 +462,13 @@
         <!-- LiveStream Panel -->
         <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd;">
             <h3 style="margin-bottom: 10px; color: #495057; font-size: 16px;">📡 LiveStream to YouTube</h3>
-            
+
             <div style="margin-bottom: 10px;">
                 <label>RTMP URL (YouTube Stream Key)</label>
                 <input type="text" id="rtmpUrl" placeholder="rtmp://a.rtmp.youtube.com/live2/xxxx-xxxx-xxxx-xxxx" style="width: 100%; padding: 8px; border-radius: 4px; border: 1px solid #ddd; font-size: 12px; font-family: monospace;">
                 <p style="font-size: 10px; color: #dc3545; margin: 3px 0 0 0;">⚠️ Must start with <code>rtmp://</code></p>
             </div>
-            
+
             <div style="margin-bottom: 10px;">
                 <label style="font-weight: bold; margin-bottom: 5px; display: block;">Video Source:</label>
                 <label style="display: inline-block; margin-right: 15px; cursor: pointer;">
@@ -431,12 +479,77 @@
                 </label>
                 <p style="font-size: 11px; color: #6c757d; margin: 5px 0 0 0;">Audio will always be from Master output (both tracks mixed)</p>
             </div>
-            
-            <div style="display: flex; gap: 8px;">
+
+            <!-- FFmpeg Parameters -->
+            <details style="margin-top: 15px; padding: 10px; background: white; border-radius: 6px; border: 1px solid #ddd;">
+                <summary style="cursor: pointer; font-weight: bold; color: #495057;">⚙️ Advanced Settings (FFmpeg Parameters)</summary>
+
+                <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #eee;">
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        Video Bitrate: <span id="videoBitrateValue" style="font-weight: bold; color: #007bff;">750k</span>
+                    </label>
+                    <input type="range" id="videoBitrate" min="500" max="9500" step="250" value="750"
+                           oninput="document.getElementById('videoBitrateValue').textContent = this.value + 'k'"
+                           style="width: 100%; margin-bottom: 10px;">
+                    <p style="font-size: 10px; color: #6c757d; margin: 0 0 10px 0;">Recommended: 500-1500k for 360p-720p, up to 9500k for 1080p+</p>
+
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        Audio Bitrate: <span id="audioBitrateValue" style="font-weight: bold; color: #007bff;">128k</span>
+                    </label>
+                    <input type="range" id="audioBitrate" min="64" max="320" step="32" value="128"
+                           oninput="document.getElementById('audioBitrateValue').textContent = this.value + 'k'"
+                           style="width: 100%; margin-bottom: 10px;">
+                    <p style="font-size: 10px; color: #6c757d; margin: 0 0 10px 0;">Recommended: 128-192k for stereo</p>
+
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        GOP Size (Keyframe Interval): <span id="gopSizeValue" style="font-weight: bold; color: #007bff;">60</span>
+                    </label>
+                    <input type="range" id="gopSize" min="30" max="120" step="30" value="60"
+                           oninput="document.getElementById('gopSizeValue').textContent = this.value"
+                           style="width: 100%; margin-bottom: 10px;">
+                    <p style="font-size: 10px; color: #6c757d; margin: 0 0 10px 0;">Lower = more stable, Higher = better compression</p>
+
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        Buffer Size: <span id="bufferSizeValue" style="font-weight: bold; color: #007bff;">4096</span>
+                    </label>
+                    <input type="range" id="bufferSize" min="512" max="16384" step="512" value="4096"
+                           oninput="document.getElementById('bufferSizeValue').textContent = this.value"
+                           style="width: 100%; margin-bottom: 10px;">
+                    <p style="font-size: 10px; color: #6c757d; margin: 0 0 10px 0;">Larger = less audio drops, but more latency (max: 16384)</p>
+
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        Audio Sync (-async): <span id="asyncValue" style="font-weight: bold; color: #007bff;">0</span>
+                    </label>
+                    <input type="range" id="asyncParam" min="0" max="10" step="1" value="0"
+                           oninput="document.getElementById('asyncValue').textContent = this.value"
+                           style="width: 100%; margin-bottom: 10px;">
+                    <p style="font-size: 10px; color: #6c757d; margin: 0 0 10px 0;">0 = no sync (smooth audio, recommended), 1+ = force sync (may cause choppy audio)</p>
+
+                    <label style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        Chunk Interval (ms): <span id="chunkIntervalValue" style="font-weight: bold; color: #007bff;">50</span>
+                    </label>
+                    <input type="range" id="chunkInterval" min="10" max="200" step="10" value="50"
+                           oninput="document.getElementById('chunkIntervalValue').textContent = this.value"
+                           style="width: 100%; margin-bottom: 10px;">
+                    <p style="font-size: 10px; color: #6c757d; margin: 0 0 15px 0;">10-50ms = smooth but high load, 100-200ms = stable but chunky</p>
+
+                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 5px; cursor: pointer;">
+                        <input type="checkbox" id="denoiseEnabled" checked style="width: auto; margin: 0;">
+                        <span style="font-weight: 500;">Enable Audio FFT DeNoise (afftdn)</span>
+                    </label>
+                    <p style="font-size: 10px; color: #6c757d; margin: 0 0 10px 0;">Reduces background noise using FFT-based filtering (recommended: ON)</p>
+
+                    <button onclick="resetFFmpegDefaults()" style="margin-top: 10px; padding: 6px 12px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                        Reset to Defaults
+                    </button>
+                </div>
+            </details>
+
+            <div style="display: flex; gap: 8px; margin-top: 10px;">
                 <button id="btn-livestream-start" onclick="startLiveStream()" style="flex: 1; background: #e74c3c; color: white; padding: 10px; border-radius: 8px; font-weight: bold;">🔴 Start LiveStream</button>
                 <button id="btn-livestream-stop" onclick="stopLiveStream()" disabled style="flex: 1; background: #95a5a6; color: white; padding: 10px; border-radius: 8px; font-weight: bold;">⏹ Stop LiveStream</button>
             </div>
-            
+
             <div id="livestream-status" style="margin-top: 10px; padding: 8px; border-radius: 4px; background: #ecf0f1; text-align: center; font-size: 12px; color: #7f8c8d;">
                 Idle
             </div>
@@ -516,7 +629,7 @@
         <div class="status idle" id="status">Ready to record</div>
         <div id="download-container" style="margin-top: 15px; text-align: center;"></div>
     </div>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.7.58/Tone.js"></script>
     <script>
         let audioCtx, masterDest, recorder, chunks;
         let timerInterval = null;
@@ -567,11 +680,14 @@
         function renderPlaylistUI(trackId) {
             const track = tracks[trackId - 1];
             if (!track) return;
-            
-            const ul = document.getElementById(`playlist${trackId}`);
 
-            ul.innerHTML = track.playlist.map((item, index) => `
-                <li style="display: flex; align-items: center; gap: 5px; padding: 10px; border-bottom: 1px solid #ddd; background: ${index === track.currentIndex ? '#d1ecf1' : 'transparent'};">
+            const ul = document.getElementById(`playlist${trackId}`);
+            ul.innerHTML = track.playlist.map((item, index) => {
+                const isPlaying = index === track.currentIndex;
+                const className = isPlaying ? 'playing-stripe' : '';
+                const inlineBg = isPlaying ? "" : "background: transparent;";
+                return `
+                <li class="${className}" style="display: flex; align-items: center; gap: 5px; padding: 10px; border-bottom: 1px solid #ddd;${inlineBg}">
                     <span style="flex: 1; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer;" onclick="loadFromPlaylist(${trackId}, ${index})">
                         ${index + 1}. ${item.url}
                     </span>
@@ -581,8 +697,8 @@
                         <button onclick="moveItem(${trackId}, ${index}, 1)" style="padding: 5px 8px; font-size: 10px;">▼</button>
                         <button onclick="removeFromList(${trackId}, ${index})" style="background: #dc3545; color: white; padding: 5px 8px; font-size: 10px;">×</button>
                     </div>
-                </li>
-            `).join('');
+                </li>`;
+            }).join('');
         }
 
         async function loadFromPlaylist(trackId, index, autoPlay = false) {
@@ -625,7 +741,7 @@
         function moveItem(trackId, index, direction) {
             const track = tracks[trackId - 1];
             if (!track) return;
-            
+
             const newIndex = index + direction;
             if (newIndex < 0 || newIndex >= track.playlist.length) return;
 
@@ -642,7 +758,7 @@
         function removeFromList(trackId, index) {
             const track = tracks[trackId - 1];
             if (!track) return;
-            
+
             track.playlist.splice(index, 1);
 
             if (track.currentIndex >= track.playlist.length) {
@@ -664,13 +780,32 @@
                 alert(`Track ${id} を先に Set & Load してください。`);
             }
         }
+        async function resetTrack(id) {
+            const track = tracks[id - 1];
+            if (!track) return;
 
-        function resetTrack(id) {
-            const target = tracks[id - 1];
-            if (target) {
-                target.stopAndReset();
+            // 現在のオフセット値を取得（クリアしない！）
+            const offsetValue = parseFloat(document.getElementById(`start${id}`).value) || 0;
+            console.log(`[Track ${id}] Resetting with offset: ${offsetValue}`);
+
+            // 強制リセット（一度接続を完全に切る）
+            track.forceReset();
+
+            // 現在の入力欄（URLとOffset）に基づいて再ロード
+            // これにより、タイム表示も00:00:06などから始まります
+            await track.load();
+            // play() を呼ばず、ポーズ状態にする
+            if (track.video) {
+                track.video.pause();
+                track.stopTimer(); // タイマーも確実に止める
             }
         }
+        // function resetTrack(id) {
+        //     const target = tracks[id - 1];
+        //     if (target) {
+        //         target.stopAndReset();
+        //     }
+        // }
 
         function updateRepeatMode(trackId) {
             updateRepeatStatus(trackId);
@@ -682,7 +817,7 @@
 
             const repeatMode = track.getRepeatMode();
             const statusElement = document.getElementById(`repeatStatus${trackId}`);
-            
+
             if (!statusElement) return;
 
             switch(repeatMode) {
@@ -700,7 +835,6 @@
             }
         }
 
-        // Track EQ (3-band) update function
         function updateEQ(trackId, band, value) {
             const track = tracks[trackId - 1];
             if (!track || !track.filters) return;
@@ -714,7 +848,6 @@
             }
         }
 
-        // Master EQ (12-band) update function
         function updateMasterEQ(index, value) {
             if (!masterEQFilters[index]) return;
             const val = parseFloat(value);
@@ -743,7 +876,46 @@
                 btn.style.background = '#6c757d';
             }
         }
+        // ピッチ変更（半音単位: -12 ～ 12）
+        function updatePitch(trackId, value) {
+            const track = tracks[trackId - 1];
+            if (!track || !track.pitchShift) return;
 
+            const userPitch = parseFloat(value);
+            const speed = track.video.playbackRate;
+
+            if (track.isFxEnabled) {
+                // スピードによる音程変化分を差し引く（12 * log2(speed) はスピードによる上昇分）
+                const pitchOffset = 12 * Math.log2(speed);
+                track.pitchShift.pitch = userPitch - pitchOffset;
+            } else {
+                track.pitchShift.pitch = userPitch;
+            }
+
+            const display = document.getElementById(`pitch-val${trackId}`);
+            if (display) display.textContent = (userPitch > 0 ? '+' : '') + userPitch;
+        }
+
+        // スピード変更（0.5 ～ 2.0）
+        function updateSpeed(trackId, value) {
+            const track = tracks[trackId - 1];
+            if (!track) return;
+
+            const speed = parseFloat(value);
+            track.video.playbackRate = speed;
+
+            // ★ 常に現在のピッチスライダーの値を取得して再計算
+            const pitchSlider = document.getElementById(`pitch-slider${trackId}`);
+            const userPitch = pitchSlider ? parseFloat(pitchSlider.value) : 0;
+
+            if (track.isFxEnabled && track.pitchShift) {
+                const pitchOffset = 12 * Math.log2(speed);
+                track.pitchShift.pitch = userPitch - pitchOffset;
+            }
+
+            const display = document.getElementById(`speed-val${trackId}`);
+            if (display) display.textContent = speed.toFixed(2) + 'x';
+        }
         class Track {
             constructor(ctx, dest, trackNum) {
                 this.ctx = ctx;
@@ -779,39 +951,67 @@
                 const offsetTime = parseFloat(document.getElementById(`start${this.id}`).value) || 0;
                 this.video.currentTime = offsetTime;
                 this.stopTimer();
+                this.secondsElapsed = offsetTime; // secondsElapsedも更新
                 this.timeDisplay.innerText = this.formatTime(offsetTime);
                 if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
             }
 
             async togglePlay() {
-                if (!this.video.src) return;
+                if (!this.video.src) {
+                    console.warn(`[Track ${this.id}] No source loaded`);
+                    return;
+                }
 
-                if (this.video.paused) {
-                    this.lastPos = this.video.currentTime;
-                    await this.video.play();
-                    if (this.btnPlayPause) this.btnPlayPause.innerText = "Pause";
-                } else {
-                    this.video.pause();
-                    if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
+                try {
+                    // ★ Tone.js のエンジンを始動。一度起動すればOK。
+                    if (Tone.context.state !== 'running') {
+                        await Tone.start();
+                        console.log(`[Track ${this.id}] Tone.js Started`);
+                    }
+                    if (this.ctx && this.ctx.state === 'suspended') {
+                        await this.ctx.resume();
+                    }
+
+                    if (this.video.paused) {
+                        this.lastPos = this.video.currentTime;
+                        await this.video.play();
+                        if (this.btnPlayPause) this.btnPlayPause.innerText = "Pause";
+                    } else {
+                        this.video.pause();
+                        if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
+                    }
+                } catch (e) {
+                    console.error(`[Track ${this.id}] Play/Pause error:`, e);
+                    this.stopAndReset();
+                    alert(`Track ${this.id}: Failed to play. Try reloading the track.`);
                 }
             }
 
             stopAndReset() {
-                this.video.pause();
-                const offsetTime = parseFloat(document.getElementById(`start${this.id}`).value) || 0;
-                this.video.currentTime = offsetTime;
-                this.stopTimer();
-                this.timeDisplay.innerText = this.formatTime(this.video.currentTime);
-                if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
+                try {
+                    this.video.pause();
+                    const offsetTime = parseFloat(document.getElementById(`start${this.id}`).value) || 0;
+                    this.video.currentTime = offsetTime;
+                    this.stopTimer();
+                    this.secondsElapsed = offsetTime; // secondsElapsedも更新
+                    this.timeDisplay.innerText = this.formatTime(offsetTime); // offsetTimeを直接表示
+                    if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
+                } catch (e) {
+                    console.error(`[Track ${this.id}] Stop/Reset error:`, e);
+                    this.stopTimer();
+                    this.timeDisplay.innerText = "00:00:00";
+                    if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
+                }
             }
 
             setupNodes() {
                 if (!this.source) {
                     setupMasterChain();
+                    this.video.preservesPitch = false; // ブラウザ側の補正をオフにする
+                    Tone.setContext(this.ctx);
 
                     this.source = this.ctx.createMediaElementSource(this.video);
 
-                    // Track EQ (3-band)
                     this.filters = {};
                     this.filters.low = this.ctx.createBiquadFilter();
                     this.filters.low.type = 'lowshelf';
@@ -829,24 +1029,29 @@
                     this.filters.high.frequency.value = 3200;
                     this.filters.high.gain.value = 0;
 
-                    // Track Gain
+                    this.pitchShift = new Tone.PitchShift({
+                        pitch: 0,
+                        windowSize: 0.1
+                    });
+
                     this.gain = this.ctx.createGain();
                     this.gain.gain.value = this.volInput.value;
 
-                    // Connect: source -> low -> mid -> high -> gain -> masterEQ[0]
+                    this.filters.high.disconnect();
                     this.source.connect(this.filters.low);
                     this.filters.low.connect(this.filters.mid);
                     this.filters.mid.connect(this.filters.high);
-                    this.filters.high.connect(this.gain);
+                    //this.filters.high.connect(this.gain);
+                    // high -> pitchShift (Tone.js) -> gain
+                    Tone.connect(this.filters.high, this.pitchShift);
+                    Tone.connect(this.pitchShift, this.gain);
                     this.gain.connect(masterEQFilters[0]);
 
                     this.volInput.oninput = () => {
                         const val = parseFloat(this.volInput.value);
-
                         if (!this.isMuted) {
                             this.gain.gain.setTargetAtTime(val, this.ctx.currentTime, 0.01);
                         }
-
                         const display = document.getElementById(`vol${this.id}-value`);
                         if (display) {
                             display.textContent = Math.round(val * 100) + '%';
@@ -856,23 +1061,64 @@
             }
 
             async load() {
-                this.setupNodes(); // EQノードとオーディオグラフを初期化
-                
+                // AudioContextがsuspended状態の場合は再開
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    console.log(`[Track ${this.id}] Resuming suspended AudioContext`);
+                    await this.ctx.resume();
+                }
+
+                this.setupNodes();
+                // ★ エフェクトのリセット
+                this.video.playbackRate = 1.0;
+                if (this.pitchShift) this.pitchShift.pitch = 0;
+
+                // ★ UI表示のリセット（HTML要素が存在する場合のみ）
+                const pVal = document.getElementById(`pitch-val${this.id}`);
+                const sVal = document.getElementById(`speed-val${this.id}`);
+                if (pVal) pVal.textContent = "0";
+                if (sVal) sVal.textContent = "1.00x";
+
+                const pSlider = document.querySelector(`input[oninput*="updatePitch(${this.id}"]`);
+                const sSlider = document.querySelector(`input[oninput*="updateSpeed(${this.id}"]`);
+                if (pSlider) pSlider.value = 0;
+                if (sSlider) sSlider.value = 1.0;
+
                 const url = document.getElementById(`url${this.id}`).value;
-                const startTime = document.getElementById(`start${this.id}`).value || 0;
+                //const startTime = document.getElementById(`start${this.id}`).value || 0;
+                // ★ startTimeを数値として取得
+                const startTime = parseFloat(document.getElementById(`start${this.id}`).value) || 0;
                 if (!url) return;
 
                 this.stopTimer();
-                this.secondsElapsed = 0;
-                this.timeDisplay.innerText = "00:00:00";
-
+                //this.secondsElapsed = 0;
+                //this.timeDisplay.innerText = "00:00:00";
+                // ★ ここを修正：0ではなく指定したOffset秒数から開始する
+                this.secondsElapsed = startTime;
+                // ★ 表示も即座に 00:00:06 などに更新する
+                this.timeDisplay.innerText = this.formatTime(this.secondsElapsed);
+                // すべてのイベントハンドラーをクリア
+                const events = ['play', 'pause', 'ended', 'error', 'loadeddata', 'loadstart',
+                               'canplay', 'seeking', 'seeked', 'stalled', 'suspend', 'waiting'];
+                events.forEach(event => this.video[`on${event}`] = null);
+                // バックエンドの app.py の audio関数へ start パラメータを渡す
                 const proxyUrl = `/audio?url=${encodeURIComponent(url)}&start=${startTime}&format=mp4&repeat=false`;
+                // バックエンドの app.py の audio関数へ start パラメータを渡す
+                this.video.preservesPitch = false;
+                // 古いsrcをクリア
+                this.video.src = '';
+                this.video.load();
+
+                // ブラウザの内部処理を待つ
+                await new Promise(resolve => setTimeout(resolve, 100));
+
+                // 新しいsrcを設定
                 this.video.src = proxyUrl;
                 this.video.muted = false;
 
+                // イベントハンドラーを再設定
                 this.video.onplay = () => this.startTimer();
                 this.video.onpause = () => this.stopTimer();
-                
+
                 this.video.onended = () => {
                     this.stopTimer();
 
@@ -892,16 +1138,65 @@
                 };
 
                 return new Promise((resolve, reject) => {
+                    let resolved = false;
+
                     this.video.onloadeddata = () => {
-                        this.video.currentTime = parseFloat(startTime) || 0;
-                        resolve();
+                        if (!resolved) {
+                            resolved = true;
+                            clearTimeout(timeoutId);
+                            // 入力欄の開始秒数を取得してシーク
+                            //const startTime = parseFloat(document.getElementById(`start${this.id}`).value) || 0;
+                            //this.video.currentTime = startTime;
+                            // ★ 重要：サーバー側で-ssされていても、ブラウザの再生ヘッドを明示的に合わせる
+                            this.video.currentTime = startTime;
+                            // 秒数表示 [6s] がある場合はここでも更新
+                            const secEl = document.getElementById(`seconds${this.id}`);
+                            if (secEl) secEl.innerText = `[${Math.floor(this.secondsElapsed)}s]`;
+                            console.log(`[Track ${this.id}] Loaded successfully`);
+                            resolve();
+                        }
+                    };
+                    this.video.oncanplay = () => {
+                        if (!resolved) {
+                            resolved = true;
+                            clearTimeout(timeoutId);
+
+                            //const startTime = parseFloat(document.getElementById(`start${this.id}`).value) || 0;
+
+                            try {
+                                this.video.currentTime = startTime;
+                            } catch (e) {
+                                console.warn("Seek failed, but server should handle it.");
+                            }
+
+                            this.video.pause(); // ロード直後はポーズ
+                            resolve();
+                        }
+                    };
+                    this.video.onerror = (e) => {
+                        if (!resolved) {
+                            resolved = true;
+                            clearTimeout(timeoutId);
+                            console.error(`[Track ${this.id}] Video error:`, e);
+
+                            // エラー時は強制リセット
+                            this.forceReset();
+
+                            reject(new Error(`Video element error: ${this.video.error ? this.video.error.message : 'Unknown'}`));
+                        }
                     };
 
-                    this.video.onerror = () => {
-                        reject(new Error("Video element error"));
-                    };
+                    const timeoutId = setTimeout(() => {
+                        if (!resolved) {
+                            resolved = true;
+                            console.error(`[Track ${this.id}] Load timeout`);
 
-                    setTimeout(() => reject(new Error("Timeout")), 15000);
+                            // タイムアウト時も強制リセット
+                            this.forceReset();
+
+                            reject(new Error("Load timeout (15s)"));
+                        }
+                    }, 15000);
 
                     this.video.load();
                 });
@@ -920,32 +1215,57 @@
                     btn.style.background = "#6c757d";
                 }
             }
-
             startTimer() {
                 this.stopTimer();
 
-                const timeStr = this.timeDisplay.innerText.trim();
-                const parts = timeStr.split(':').map(Number);
-                let currentSeconds = 0;
-
-                if (parts.length === 3) {
-                    currentSeconds = (parts[0] * 3600) + (parts[1] * 60) + parts[2];
-                } else if (parts.length === 2) {
-                    currentSeconds = (parts[0] * 60) + parts[1];
-                }
-
+                // load() で設定された this.secondsElapsed (Offset値) を基点にする
+                const currentSeconds = this.secondsElapsed;
                 const startTimeAtClick = Date.now();
-                this.secondsElapsed = currentSeconds;
 
                 this.timerId = setInterval(() => {
                     if (this.video && !this.video.paused) {
                         const now = Date.now();
                         const sessionSeconds = Math.floor((now - startTimeAtClick) / 1000);
+
+                        // 基点 + 経過分
                         this.secondsElapsed = currentSeconds + sessionSeconds;
                         this.timeDisplay.innerText = this.formatTime(this.secondsElapsed);
+
+                        // 秒数表示 [6s] の更新
+                        const secEl = document.getElementById(`seconds${this.id}`);
+                        if (secEl) secEl.innerText = `[${this.secondsElapsed}s]`;
                     }
                 }, 200);
             }
+
+            // startTimer() {
+            //     this.stopTimer();
+
+            //     const timeStr = this.timeDisplay.innerText.trim();
+            //     const parts = timeStr.split(':').map(Number);
+            //     let currentSeconds = 0;
+
+            //     if (parts.length === 3) {
+            //         currentSeconds = (parts[0] * 3600) + (parts[1] * 60) + parts[2];
+            //     } else if (parts.length === 2) {
+            //         currentSeconds = (parts[0] * 60) + parts[1];
+            //     }
+
+            //     const startTimeAtClick = Date.now();
+            //     this.secondsElapsed = currentSeconds;
+
+            //     this.timerId = setInterval(() => {
+            //         if (this.video && !this.video.paused) {
+            //             const now = Date.now();
+            //             const sessionSeconds = Math.floor((now - startTimeAtClick) / 1000);
+            //             this.secondsElapsed = currentSeconds + sessionSeconds;
+            //             this.timeDisplay.innerText = this.formatTime(this.secondsElapsed);
+            //             // ★ ここに追加：秒数のみの表示を更新
+            //             const secEl = document.getElementById(`seconds${this.id}`);
+            //             if (secEl) secEl.innerText = `[${this.secondsElapsed}s]`;
+            //         }
+            //     }, 200);
+            // }
 
             stopTimer() {
                 if (this.timerId) {
@@ -965,14 +1285,101 @@
             }
 
             async restart() {
-                this.video.currentTime = 0;
-                this.secondsElapsed = 0;
-                this.timeDisplay.innerText = "00:00:00";
                 try {
+                    this.video.currentTime = 0;
+                    this.secondsElapsed = 0;
+                    this.timeDisplay.innerText = "00:00:00";
                     await this.video.play();
                 } catch (e) {
-                    console.error("Restart failed", e);
+                    console.error(`[Track ${this.id}] Restart failed:`, e);
+                    const currentUrl = document.getElementById(`url${this.id}`).value;
+                    if (currentUrl) {
+                        console.log(`[Track ${this.id}] Attempting to reload...`);
+                        try {
+                            await this.load();
+                            await this.video.play();
+                        } catch (reloadError) {
+                            console.error(`[Track ${this.id}] Reload also failed:`, reloadError);
+                            alert(`Track ${this.id}: Cannot restart. Please reload manually.`);
+                        }
+                    }
                 }
+            }
+
+            // 強制リセット（軽量版）- エラー時に自動実行
+            forceReset() {
+                console.log(`[Track ${this.id}] Force reset initiated`);
+                try {
+                    const events = ['play', 'pause', 'ended', 'error', 'loadeddata', 'loadstart',
+                                   'canplay', 'seeking', 'seeked', 'stalled', 'suspend', 'waiting',
+                                   'abort', 'emptied'];
+                    events.forEach(event => { this.video[`on${event}`] = null; });
+
+                    this.video.pause();
+                    this.video.removeAttribute('src');
+                    this.video.load();
+
+                    this.stopTimer();
+                    this.secondsElapsed = 0;
+                    this.timeDisplay.innerText = "00:00:00";
+                    if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
+                    console.log(`[Track ${this.id}] Force reset completed`);
+                } catch (e) {
+                    console.error(`[Track ${this.id}] Force reset error:`, e);
+                }
+            }
+
+            // ハードリセット（完全再構築）- 🔧ボタンで手動実行
+            async hardReset() {
+                console.log(`[Track ${this.id}] Hard reset: destroying and recreating video element`);
+
+                // オーディオノードの完全に切断
+                try {
+                    if (this.source) { this.source.disconnect(); this.source = null; }
+                    if (this.filters) {
+                        Object.values(this.filters).forEach(f => { try { f.disconnect(); } catch(e){} });
+                    }
+                    if (this.gain) { try { this.gain.disconnect(); } catch(e){} this.gain = null; }
+                } catch (e) {
+                    console.error(`[Track ${this.id}] Error disconnecting audio nodes:`, e);
+                }
+
+                // 古いvideo要素を削除して新規作成
+                const oldVideo = this.video;
+                const parent = oldVideo.parentElement;
+                if (!parent) {
+                    console.error(`[Track ${this.id}] Parent element not found!`);
+                    return;
+                }
+
+                const newVideo = document.createElement('video');
+                newVideo.id = `v${this.id}`;
+                newVideo.setAttribute('width', '100%');
+                newVideo.setAttribute('height', 'auto');
+                newVideo.style.cssText = 'border-radius: 8px; background: #000; margin-bottom: 12px; display: block;';
+                newVideo.setAttribute('crossorigin', 'anonymous');
+                newVideo.setAttribute('playsinline', '');
+                newVideo.muted = false;
+
+                parent.replaceChild(newVideo, oldVideo);
+                this.video = newVideo;
+
+                // オーディオノードを再構築
+                this.source = null;
+                this.filters = null;
+                this.gain = null;
+
+                await new Promise(resolve => setTimeout(resolve, 200));
+                this.setupNodes();
+
+                // UI状態リセット
+                this.stopTimer();
+                this.secondsElapsed = 0;
+                this.timeDisplay.innerText = "00:00:00";
+                if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
+
+                console.log(`[Track ${this.id}] Hard reset completed - ready to load new content`);
+                alert(`Track ${this.id} has been hard reset successfully.\nYou can now load content again.`);
             }
 
             stop() {
@@ -995,7 +1402,6 @@
         function setupMasterChain() {
             if (masterGain || !audioCtx) return;
 
-            // Master EQ Filters (12-band)
             masterEQFilters = masterEQFreqs.map(freq => {
                 const filter = audioCtx.createBiquadFilter();
                 filter.type = 'peaking';
@@ -1005,17 +1411,13 @@
                 return filter;
             });
 
-            // Master Gain
             masterGain = audioCtx.createGain();
             masterGain.gain.value = 1.0;
 
-            // Connect: EQ[0] -> EQ[1] -> ... -> EQ[11] -> masterGain -> destination
-            // EQ chain connection
             for (let i = 0; i < masterEQFilters.length - 1; i++) {
                 masterEQFilters[i].connect(masterEQFilters[i + 1]);
             }
-            
-            // Last EQ -> Master Gain -> outputs
+
             const lastEQ = masterEQFilters[masterEQFilters.length - 1];
             lastEQ.connect(masterGain);
             masterGain.connect(audioCtx.destination);
@@ -1039,12 +1441,17 @@
 
         let isPlayingAll = false;
 
-        function playAllTracks() {
+        async function playAllTracks() {
             const btnPlayAll = document.querySelector('button[onclick="playAllTracks()"]');
 
             if (!isPlayingAll) {
                 if (tracks.length === 0 || tracks.every(t => !t || !t.video.src)) {
                     return setStatus("No tracks loaded", "error");
+                }
+
+                // AudioContextがsuspended状態の場合は再開
+                if (audioCtx && audioCtx.state === 'suspended') {
+                    await audioCtx.resume();
                 }
 
                 isPlayingAll = true;
@@ -1186,13 +1593,13 @@
                 const timerElement = document.getElementById('timer');
                 timerElement.classList.add('recording-bg');
                 btnStop.classList.add('recording-active');
-                
+
                 if (tracks.length === 0 || tracks.every(t => !t || !t.video.src)) {
                     throw new Error('Please Load at least one track first');
                 }
 
                 setStatus('Starting Recording...', 'loading');
-                
+
                 if (!audioCtx) {
                     audioCtx = new (window.AudioContext || window.webkitAudioContext)();
                     masterDest = audioCtx.createMediaStreamDestination();
@@ -1249,14 +1656,14 @@
                 if (recorder && recorder.state === 'recording') {
                     recorder.stop();
                 }
-                
+
                 tracks.forEach(t => {
                     if (t) {
                         t.stop();
                         t.stopAndReset();
                     }
                 });
-                
+
                 setStatus('Processing...', 'loading');
                 btnStop.disabled = true;
                 btnCancel.disabled = true;
@@ -1274,7 +1681,7 @@
                     clearInterval(timerInterval);
                     timerInterval = null;
                 }
-                
+
                 recordingStartTime = null;
 
                 const btnPlayAll = document.querySelector('button[onclick="playAllTracks()"]');
@@ -1354,7 +1761,7 @@
                             t.stopTimer();
                         }
                     });
-                    
+
                     if (isRecording && recorder.state === 'recording') recorder.pause();
 
                     clearInterval(timerInterval);
@@ -1474,10 +1881,39 @@
             }
         });
 
+        // === Track Hard Reset ===
+        function hardResetTrack(trackId) {
+            const track = tracks[trackId - 1];
+            if (track) {
+                track.hardReset();
+            } else {
+                console.error(`Track ${trackId} not found or not initialized`);
+                alert(`Track ${trackId} is not initialized yet.\nPlease add a URL to the playlist first.`);
+            }
+        }
+
         // === LiveStream Functions ===
         let livestreamWS = null;
         let livestreamRecorder = null;
         let livestreamActive = false;
+        let retryCount = 0;
+        const MAX_RETRY = 5;
+
+        function resetFFmpegDefaults() {
+            document.getElementById('videoBitrate').value = 750;
+            document.getElementById('videoBitrateValue').textContent = '750k';
+            document.getElementById('audioBitrate').value = 128;
+            document.getElementById('audioBitrateValue').textContent = '128k';
+            document.getElementById('gopSize').value = 60;
+            document.getElementById('gopSizeValue').textContent = '60';
+            document.getElementById('bufferSize').value = 4096;
+            document.getElementById('bufferSizeValue').textContent = '4096';
+            document.getElementById('asyncParam').value = 0;
+            document.getElementById('asyncValue').textContent = '0';
+            document.getElementById('chunkInterval').value = 50;
+            document.getElementById('chunkIntervalValue').textContent = '50';
+            document.getElementById('denoiseEnabled').checked = true;
+        }
 
         async function startLiveStream() {
             const rtmpUrl = document.getElementById('rtmpUrl').value.trim();
@@ -1485,29 +1921,39 @@
                 alert('Please enter RTMP URL');
                 return;
             }
-            
-            // RTMP URL検証
+
             if (!rtmpUrl.startsWith('rtmp://') && !rtmpUrl.startsWith('rtmps://')) {
-                alert('Invalid RTMP URL. Must start with rtmp:// or rtmps://\n\nExample: rtmp://a.rtmp.youtube.com/live2/your-stream-key');
+                alert('Invalid RTMP URL. Must start with rtmp:// or rtmps://');
                 return;
             }
 
             const videoSource = document.querySelector('input[name="videoSource"]:checked').value;
-            
-            // AudioContextが初期化されているか確認
+
             if (!audioCtx || !masterDest) {
                 alert('Please load at least one track before starting livestream');
                 return;
             }
-            
+
             try {
-                // バックエンドに開始リクエスト
+                const ffmpegParams = {
+                    video_bitrate: parseInt(document.getElementById('videoBitrate').value),
+                    audio_bitrate: parseInt(document.getElementById('audioBitrate').value),
+                    gop_size: parseInt(document.getElementById('gopSize').value),
+                    buffer_size: parseInt(document.getElementById('bufferSize').value),
+                    async_param: parseInt(document.getElementById('asyncParam').value),
+                    chunk_interval: parseInt(document.getElementById('chunkInterval').value),
+                    denoise_enabled: document.getElementById('denoiseEnabled').checked
+                };
+
+                console.log('[LiveStream] FFmpeg params:', ffmpegParams);
+
                 const response = await fetch('/livestream/start', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         rtmp_url: rtmpUrl,
-                        video_track: parseInt(videoSource)
+                        video_track: parseInt(videoSource),
+                        ffmpeg_params: ffmpegParams
                     })
                 });
 
@@ -1515,110 +1961,10 @@
                     throw new Error('Failed to start livestream');
                 }
 
-                // WebSocket接続（HTTP/HTTPS自動判定）
-                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-                const wsUrl = `${protocol}//${window.location.host}/livestream/ws`;
-                console.log('[LiveStream] Connecting to:', wsUrl);
-                livestreamWS = new WebSocket(wsUrl);
-                
-                livestreamWS.onopen = async () => {
-                    console.log('[LiveStream] WebSocket connected - Hybrid Mode');
-                    
-                    // 選択されたトラックの情報を取得
-                    const selectedTrack = tracks[parseInt(videoSource) - 1];
-                    
-                    if (!selectedTrack || selectedTrack.playlist.length === 0) {
-                        alert('Selected track has no playlist items');
-                        stopLiveStream();
-                        return;
-                    }
-                    
-                    // プレイリスト情報をBackendに送信
-                    const playlistData = {
-                        playlist: selectedTrack.playlist.map(item => item.url),
-                        current_index: selectedTrack.currentIndex,
-                        repeat_mode: selectedTrack.getRepeatMode()
-                    };
-                    
-                    console.log('[LiveStream] Sending playlist:', playlistData);
-                    livestreamWS.send(JSON.stringify(playlistData));
-                    
-                    // Master AudioをOpus形式でエンコードして送信
-                    const audioStream = masterDest.stream;
-                    
-                    try {
-                        // MediaRecorderでMaster AudioをOpusにエンコード
-                        livestreamRecorder = new MediaRecorder(audioStream, {
-                            mimeType: 'audio/webm;codecs=opus',
-                            audioBitsPerSecond: 128000
-                        });
-                        
-                        console.log('[LiveStream] Audio MediaRecorder created');
-                        
-                        let chunkCount = 0;
-                        livestreamRecorder.ondataavailable = (event) => {
-                            if (event.data.size > 0 && livestreamWS && livestreamWS.readyState === WebSocket.OPEN) {
-                                chunkCount++;
-                                if (chunkCount % 50 == 0) {
-                                    console.log(`[LiveStream] Sent ${chunkCount} audio chunks`);
-                                }
-                                livestreamWS.send(event.data);
-                            }
-                        };
-                        
-                        livestreamRecorder.start(50); // 50msごとにAudioデータ送信（最適値）
-                        livestreamActive = true;
-                        
-                        console.log('[LiveStream] Audio streaming started (50ms chunks)');
+                livestreamActive = true;
+                retryCount = 0;
 
-                        document.getElementById('btn-livestream-start').disabled = true;
-                        document.getElementById('btn-livestream-stop').disabled = false;
-                        document.getElementById('btn-livestream-stop').style.background = '#e74c3c';
-                        document.getElementById('livestream-status').textContent = '🔴 LIVE (Hybrid Mode)';
-                        document.getElementById('livestream-status').style.background = '#ffebee';
-                        document.getElementById('livestream-status').style.color = '#c62828';
-                        
-                    } catch (e) {
-                        console.error('[LiveStream] MediaRecorder creation failed:', e);
-                        alert('Failed to create audio recorder: ' + e.message);
-                        stopLiveStream();
-                        return;
-                    }
-                };
-                
-                livestreamWS.onmessage = (event) => {
-                    try {
-                        const msg = JSON.parse(event.data);
-                        console.log('[LiveStream] Message from server:', msg);
-                        
-                        if (msg.type === 'progress') {
-                            const statusEl = document.getElementById('livestream-status');
-                            statusEl.textContent = `🔴 LIVE - Item ${msg.current_index + 1}/${msg.total}`;
-                        } else if (msg.type === 'completed') {
-                            console.log('[LiveStream] Playlist completed');
-                            stopLiveStream();
-                        } else if (msg.error) {
-                            console.error('[LiveStream] Server error:', msg.error);
-                            alert('LiveStream error: ' + msg.error);
-                            stopLiveStream();
-                        }
-                    } catch (e) {
-                        console.log('[LiveStream] Non-JSON message:', event.data);
-                    }
-                };
-
-                livestreamWS.onerror = (error) => {
-                    console.error('[LiveStream] WebSocket error:', error);
-                    alert(`WebSocket connection failed. Check console for details.`);
-                    stopLiveStream();
-                };
-
-                livestreamWS.onclose = () => {
-                    console.log('[LiveStream] WebSocket closed');
-                    if (livestreamActive) {
-                        stopLiveStream();
-                    }
-                };
+                setupWebSocket(videoSource, ffmpegParams);
 
             } catch (error) {
                 console.error('[LiveStream] Start error:', error);
@@ -1626,13 +1972,149 @@
             }
         }
 
+        function setupWebSocket(videoSource, ffmpegParams) {
+            if (!livestreamActive) return;
+
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}/livestream/ws`;
+            console.log(`[LiveStream] Connecting to: ${wsUrl} (attempt ${retryCount + 1})`);
+
+            livestreamWS = new WebSocket(wsUrl);
+
+            livestreamWS.onopen = async () => {
+                console.log('[LiveStream] WebSocket connected - Hybrid Mode');
+                retryCount = 0;
+
+                const selectedTrack = tracks[parseInt(videoSource) - 1];
+
+                if (!selectedTrack || selectedTrack.playlist.length === 0) {
+                    alert('Selected track has no playlist items');
+                    stopLiveStream();
+                    return;
+                }
+                // === 追加：インデックスの不正なズレをここで直す ===
+                let safeIndex = selectedTrack.currentIndex;
+                if (safeIndex >= selectedTrack.playlist.length) {
+                    console.log(`[LiveStream] Index ${safeIndex} out of bounds, resetting to 0`);
+                    safeIndex = 0;
+                    selectedTrack.currentIndex = 0; // トラック側の状態も戻しておく
+                } else {
+                    console.log(`[LiveStream] Index ${safeIndex} is safe`);
+                }
+
+                const playlistData = {
+                    playlist: selectedTrack.playlist.map(item => item.url),
+                    current_index: safeIndex,
+                    //current_index: selectedTrack.currentIndex,
+                    repeat_mode: selectedTrack.getRepeatMode()
+                };
+
+                console.log('[LiveStream] Sending playlist:', playlistData);
+                livestreamWS.send(JSON.stringify(playlistData));
+
+                const audioStream = masterDest.stream;
+
+                try {
+                    livestreamRecorder = new MediaRecorder(audioStream, {
+                        mimeType: 'audio/webm;codecs=opus',
+                        audioBitsPerSecond: 128000
+                    });
+
+                    let chunkCount = 0;
+                    livestreamRecorder.ondataavailable = (event) => {
+                        if (event.data.size > 0 && livestreamWS && livestreamWS.readyState === WebSocket.OPEN) {
+                            chunkCount++;
+                            if (chunkCount % 50 == 0) {
+                                console.log(`[LiveStream] Sent ${chunkCount} audio chunks`);
+                            }
+                            livestreamWS.send(event.data);
+                        }
+                    };
+
+                    livestreamRecorder.start(ffmpegParams.chunk_interval);
+
+                    document.getElementById('btn-livestream-start').disabled = true;
+                    document.getElementById('btn-livestream-stop').disabled = false;
+                    document.getElementById('btn-livestream-stop').style.background = '#e74c3c';
+                    document.getElementById('livestream-status').textContent = '🔴 LIVE (Hybrid Mode)';
+                    document.getElementById('livestream-status').style.background = '#ffebee';
+                    document.getElementById('livestream-status').style.color = '#c62828';
+
+                } catch (e) {
+                    console.error('[LiveStream] MediaRecorder creation failed:', e);
+                    alert('Failed to create audio recorder: ' + e.message);
+                    stopLiveStream();
+                }
+            };
+
+            livestreamWS.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    console.log('[LiveStream] Message from server:', msg);
+
+                    if (msg.type === 'progress') {
+                        // currentIndexをトラックに同期
+                        const selectedTrack = tracks[parseInt(videoSource) - 1];
+                        if (selectedTrack) {
+                            selectedTrack.currentIndex = msg.current_index;
+                        }
+                        const statusEl = document.getElementById('livestream-status');
+                        statusEl.textContent = `🔴 LIVE - Item ${msg.current_index + 1}/${msg.total}`;
+                    } else if (msg.type === 'completed') {
+                        console.log('[LiveStream] Playlist completed');
+                        stopLiveStream();
+                    } else if (msg.error) {
+                        console.error('[LiveStream] Server error:', msg.error);
+                        alert('LiveStream error: ' + msg.error);
+                        stopLiveStream();
+                    }
+                } catch (e) {
+                    console.log('[LiveStream] Non-JSON message:', event.data);
+                }
+            };
+
+            livestreamWS.onclose = (event) => {
+                console.warn(`[LiveStream] WebSocket closed: code=${event.code}, reason=${event.reason}`);
+
+                if (event.code !== 1000 && livestreamActive && retryCount < MAX_RETRY) {
+                    const delay = Math.min(1000 * Math.pow(2, retryCount), 10000);
+                    console.log(`[Retry] Attempt ${retryCount + 1}/${MAX_RETRY} in ${delay}ms...`);
+
+                    const statusEl = document.getElementById('livestream-status');
+                    statusEl.textContent = `⚠️ Reconnecting... (${retryCount + 1}/${MAX_RETRY})`;
+                    statusEl.style.background = '#fff3cd';
+                    statusEl.style.color = '#856404';
+
+                    setTimeout(() => {
+                        retryCount++;
+                        setupWebSocket(videoSource, ffmpegParams);
+                    }, delay);
+
+                } else if (event.code === 1000 || !livestreamActive) {
+                    console.log('[LiveStream] Normal closure');
+                } else {
+                    console.error('[LiveStream] Max retry attempts reached');
+                    stopLiveStream();
+                    alert('Connection failed after multiple retries.');
+                }
+            };
+
+            livestreamWS.onerror = (error) => {
+                console.error('[LiveStream] WebSocket error:', error);
+            };
+        }
+
         async function stopLiveStream() {
+            console.log('[LiveStream] Stopping...');
+            livestreamActive = false;
+            retryCount = 0;
+
             if (livestreamRecorder && livestreamRecorder.state !== 'inactive') {
                 livestreamRecorder.stop();
             }
 
             if (livestreamWS) {
-                livestreamWS.close();
+                livestreamWS.close(1000);
                 livestreamWS = null;
             }
 
@@ -1642,7 +2124,6 @@
                 console.error('[LiveStream] Stop error:', error);
             }
 
-            livestreamActive = false;
             livestreamRecorder = null;
 
             document.getElementById('btn-livestream-start').disabled = false;
