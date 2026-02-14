@@ -1003,50 +1003,109 @@
                     if (this.btnPlayPause) this.btnPlayPause.innerText = "Play";
                 }
             }
+            
+            // source → EQ Low → EQ Mid → EQ High → pitchShift → gain → master
+            // setupNodes() {
+            //     if (!this.source) {
+            //         setupMasterChain();
+            //         this.video.preservesPitch = false; // ブラウザ側の補正をオフにする
+            //         Tone.setContext(this.ctx);
 
+            //         this.source = this.ctx.createMediaElementSource(this.video);
+
+            //         this.filters = {};
+            //         this.filters.low = this.ctx.createBiquadFilter();
+            //         this.filters.low.type = 'lowshelf';
+            //         this.filters.low.frequency.value = 320;
+            //         this.filters.low.gain.value = 0;
+
+            //         this.filters.mid = this.ctx.createBiquadFilter();
+            //         this.filters.mid.type = 'peaking';
+            //         this.filters.mid.frequency.value = 1000;
+            //         this.filters.mid.Q.value = 1.0;
+            //         this.filters.mid.gain.value = 0;
+
+            //         this.filters.high = this.ctx.createBiquadFilter();
+            //         this.filters.high.type = 'highshelf';
+            //         this.filters.high.frequency.value = 3200;
+            //         this.filters.high.gain.value = 0;
+
+            //         this.pitchShift = new Tone.PitchShift({
+            //             pitch: 0,
+            //             windowSize: 0.1
+            //         });
+
+            //         this.gain = this.ctx.createGain();
+            //         this.gain.gain.value = this.volInput.value;
+
+            //         this.filters.high.disconnect();
+            //         this.source.connect(this.filters.low);
+            //         this.filters.low.connect(this.filters.mid);
+            //         this.filters.mid.connect(this.filters.high);
+            //         //this.filters.high.connect(this.gain);
+            //         // high -> pitchShift (Tone.js) -> gain
+            //         Tone.connect(this.filters.high, this.pitchShift);
+            //         Tone.connect(this.pitchShift, this.gain);
+            //         this.gain.connect(masterEQFilters[0]);
+
+            //         this.volInput.oninput = () => {
+            //             const val = parseFloat(this.volInput.value);
+            //             if (!this.isMuted) {
+            //                 this.gain.gain.setTargetAtTime(val, this.ctx.currentTime, 0.01);
+            //             }
+            //             const display = document.getElementById(`vol${this.id}-value`);
+            //             if (display) {
+            //                 display.textContent = Math.round(val * 100) + '%';
+            //             }
+            //         };
+            //     }
+            // }
+    
+            // **新接続順序:**
+            // source → pitchShift → EQ Low → EQ Mid → EQ High → gain → master
             setupNodes() {
                 if (!this.source) {
                     setupMasterChain();
-                    this.video.preservesPitch = false; // ブラウザ側の補正をオフにする
+                    this.video.preservesPitch = false;
                     Tone.setContext(this.ctx);
-
+            
                     this.source = this.ctx.createMediaElementSource(this.video);
-
+            
+                    // Pitch Shiftを作成
+                    this.pitchShift = new Tone.PitchShift({
+                        pitch: 0,
+                        windowSize: 0.1
+                    });
+            
+                    // EQフィルターを作成
                     this.filters = {};
                     this.filters.low = this.ctx.createBiquadFilter();
                     this.filters.low.type = 'lowshelf';
                     this.filters.low.frequency.value = 320;
                     this.filters.low.gain.value = 0;
-
+            
                     this.filters.mid = this.ctx.createBiquadFilter();
                     this.filters.mid.type = 'peaking';
                     this.filters.mid.frequency.value = 1000;
                     this.filters.mid.Q.value = 1.0;
                     this.filters.mid.gain.value = 0;
-
+            
                     this.filters.high = this.ctx.createBiquadFilter();
                     this.filters.high.type = 'highshelf';
                     this.filters.high.frequency.value = 3200;
                     this.filters.high.gain.value = 0;
-
-                    this.pitchShift = new Tone.PitchShift({
-                        pitch: 0,
-                        windowSize: 0.1
-                    });
-
+            
                     this.gain = this.ctx.createGain();
                     this.gain.gain.value = this.volInput.value;
-
-                    this.filters.high.disconnect();
-                    this.source.connect(this.filters.low);
+            
+                    // ★ 新しい接続順序: source → pitchShift → EQ (low→mid→high) → gain → master
+                    Tone.connect(this.source, this.pitchShift);
+                    Tone.connect(this.pitchShift, this.filters.low);
                     this.filters.low.connect(this.filters.mid);
                     this.filters.mid.connect(this.filters.high);
-                    //this.filters.high.connect(this.gain);
-                    // high -> pitchShift (Tone.js) -> gain
-                    Tone.connect(this.filters.high, this.pitchShift);
-                    Tone.connect(this.pitchShift, this.gain);
+                    this.filters.high.connect(this.gain);
                     this.gain.connect(masterEQFilters[0]);
-
+            
                     this.volInput.oninput = () => {
                         const val = parseFloat(this.volInput.value);
                         if (!this.isMuted) {
